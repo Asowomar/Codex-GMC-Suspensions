@@ -2,6 +2,8 @@
 
 Production-ready SaaS for Google Merchant Center compliance checks on e-commerce domains.
 
+Repository: https://github.com/Asowomar/Codex-GMC-Suspensions
+
 ## Monorepo
 - `apps/web`: Next.js 14 app (landing + dashboard + API)
 - `apps/worker`: BullMQ worker for crawling/scanning
@@ -41,6 +43,15 @@ pnpm prisma:migrate
 pnpm dev
 pnpm dev:worker
 ```
+
+## Demo mode
+Enable instant demo scan output for presentations:
+
+```bash
+export NEXT_PUBLIC_DEMO_MODE=true
+```
+
+Landing page will show “Run Demo Scan (Instant)”.
 
 ## Deploy
 - Web/API: Vercel
