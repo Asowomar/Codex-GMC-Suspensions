@@ -1,0 +1,21 @@
+{
+  "name": "gmc-compliance-scanner",
+  "private": true,
+  "packageManager": "pnpm@8.15.6",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "prisma": "^5.16.1"
+  },
+  "scripts": {
+    "dev": "pnpm -C apps/web dev",
+    "dev:worker": "pnpm -C apps/worker dev",
+    "build": "pnpm -C apps/web build",
+    "lint": "pnpm -C apps/web lint",
+    "prisma:generate": "pnpm prisma generate",
+    "prisma:migrate": "pnpm prisma migrate dev",
+    "test": "pnpm -C packages/shared test"
+  }
+}

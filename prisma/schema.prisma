@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ScanMode {
+  QUICK
+  FULL
+}
+
+enum ScanStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum PageType {
+  PRODUCT
+  POLICY
+  OTHER
+}
+
+enum IssueSeverity {
+  HIGH
+  MEDIUM
+  LOW
+  REVIEW
+}
+
+enum PatternType {
+  KEYWORD
+  REGEX
+}
+
+enum AppliesTo {
+  PRODUCT
+  POLICY
+  ANY
+}
+
+enum Plan {
+  FREE
+  STARTER
+  AGENCY
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  plan          Plan      @default(FREE)
+  credits       Int       @default(25)
+  accounts      Account[]
+  sessions      Session[]
+  scans         Scan[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  email     String
+  domain    String
+  consent   Boolean
+  scanId    String?
+  createdAt DateTime @default(now())
+  scan      Scan?    @relation(fields: [scanId], references: [id])
+}
+
+model Scan {
+  id              String        @id @default(cuid())
+  userId          String?
+  requestedEmail  String?
+  domain          String
+  mode            ScanMode
+  status          ScanStatus     @default(QUEUED)
+  progress        Int            @default(0)
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  score           Int?
+  topIssues       String[]      @default([])
+  sheetId         String?
+  sheetUrl        String?
+  summary         Json?
+  summaryHtml     String?
+  errorMessage    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  pages           ScanPage[]
+  issues          ScanIssue[]
+  user            User?          @relation(fields: [userId], references: [id])
+
+  @@index([domain])
+}
+
+model ScanPage {
+  id                   String   @id @default(cuid())
+  scanId               String
+  url                  String
+  pageType             PageType
+  httpStatus           Int?
+  finalUrl             String?
+  canonicalUrl         String?
+  title                String?
+  metaDescription      String?
+  canonicalOk          Boolean  @default(false)
+  httpsOk              Boolean  @default(false)
+  jsonldProductPresent Boolean  @default(false)
+  priceFound           Boolean  @default(false)
+  currencyFound        Boolean  @default(false)
+  availabilityFound    Boolean  @default(false)
+  imagesOk             Boolean  @default(false)
+  suspiciousKeywords   Boolean  @default(false)
+  notes                String?
+  severitySummary      IssueSeverity?
+  issuesCodes          String[]
+  confidence           Float?
+  rawData              Json?
+  errorMessage         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@unique([scanId, url])
+}
+
+model ScanIssue {
+  id        String        @id @default(cuid())
+  scanId    String
+  pageId    String?
+  code      String
+  severity  IssueSeverity
+  message   String
+  evidence  Json?
+  createdAt DateTime      @default(now())
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId])
+}
+
+model CustomRule {
+  id         String      @id @default(cuid())
+  name       String
+  pattern    String
+  patternType PatternType
+  appliesTo  AppliesTo   @default(ANY)
+  severity   IssueSeverity
+  message    String
+  enabled    Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
